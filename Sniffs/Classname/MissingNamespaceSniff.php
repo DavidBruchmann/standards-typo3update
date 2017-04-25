@@ -20,13 +20,13 @@
  */
 
 use PHP_CodeSniffer_File as PhpCsFile;
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
-use Typo3Update\Sniffs\Options;
+use Typo3Update\Sniffs\Classname\AbstractClassnameChecker;
+use Typo3Update\Options;
 
 /**
  * Detect missing namespaces for class definitions.
  */
-class Typo3Update_Sniffs_LegacyClassnames_MissingNamespaceSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_MissingNamespaceSniff extends AbstractClassnameChecker
 {
     /**
      * Returns the token types that this sniff is interested in.
@@ -66,7 +66,8 @@ class Typo3Update_Sniffs_LegacyClassnames_MissingNamespaceSniff extends Abstract
         }
 
         $classname = $tokens[$classnamePosition]['content'];
-        $this->addFixableError($phpcsFile, $classnamePosition, $classname);
+        // TODO: Migrate class, use custom feature as some parts are different!
+        // $this->addFixableError($phpcsFile, $classnamePosition, $classname);
     }
 
     /**

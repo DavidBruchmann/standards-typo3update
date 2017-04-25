@@ -1,4 +1,5 @@
 <?php
+namespace Typo3Update;
 
 /*
  * Copyright (C) 2017  Daniel Siepmann <coding@daniel-siepmann.de>
@@ -19,20 +20,34 @@
  * 02110-1301, USA.
  */
 
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use PHP_CodeSniffer_File as PhpCsFile;
+use Typo3Update\Features;
 
 /**
- * Detect and migrate old legacy classnames instantiations using phps "new".
+ * Provides "feature" support for sniff.
  */
-class Typo3Update_Sniffs_LegacyClassnames_InstantiationWithNewSniff extends AbstractClassnameChecker
+trait FeaturesSupport
 {
     /**
-     * Returns the token types that this sniff is interested in.
-     *
-     * @return array<int>
+     * @var Features
      */
-    public function register()
+    protected $features;
+
+    public function __construct()
     {
-        return [T_NEW];
+        $this->features = new Features($this);
+    }
+
+    public function processFeatures(PhpCsFile $phpcsFile, $stackPtr, $content)
+    {
+        foreach ($this->features as $featureClassName) {
+            $feature = $this->createFeature($featureClassName);
+            $feature->process($phpcsFile, $stackPtr, $content);
+        }
+    }
+
+    protected function createFeature($featureClassname)
+    {
+        return new $featureClassname($this);
     }
 }

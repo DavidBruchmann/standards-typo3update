@@ -19,12 +19,15 @@
  * 02110-1301, USA.
  */
 
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use PHP_CodeSniffer_File as PhpCsFile;
+use Typo3Update\Sniffs\Classname\AbstractClassnameChecker;
 
 /**
- * Detect and migrate instanceof checks of old legacy classnames.
+ * Detect and migrate use statements with legacy classnames..
+ *
+ * According to PSR-2, only one class per use statement is expected.
  */
-class Typo3Update_Sniffs_LegacyClassnames_InstanceofSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_UseSniff extends AbstractClassnameChecker
 {
     /**
      * Returns the token types that this sniff is interested in.
@@ -33,8 +36,6 @@ class Typo3Update_Sniffs_LegacyClassnames_InstanceofSniff extends AbstractClassn
      */
     public function register()
     {
-        return [
-            T_INSTANCEOF,
-        ];
+        return [T_USE];
     }
 }

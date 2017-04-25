@@ -20,15 +20,20 @@
  */
 
 use PHP_CodeSniffer_File as PhpCsFile;
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use PHP_CodeSniffer_Sniff as PhpCsSniff;
+use Typo3Update\FeaturesSupport;
 
 /**
- * Migrate PHP Doc comments.
+ * Handle PHP Doc comments.
  *
  * E.g. annotations like @param or @return, see $allowedTags.
+ *
+ * Will do nothing itself, but call features.
  */
-class Typo3Update_Sniffs_LegacyClassnames_DocCommentSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_PhpDocCommentSniff implements PhpCsSniff
 {
+    use FeaturesSupport;
+
     /**
      * The configured tags will be processed.
      * @var array<string>
@@ -42,9 +47,7 @@ class Typo3Update_Sniffs_LegacyClassnames_DocCommentSniff extends AbstractClassn
      */
     public function register()
     {
-        return [
-            T_DOC_COMMENT_TAG,
-        ];
+        return [T_DOC_COMMENT_TAG];
     }
 
     /**
@@ -68,32 +71,8 @@ class Typo3Update_Sniffs_LegacyClassnames_DocCommentSniff extends AbstractClassn
         }
         $classnames = explode('|', explode(' ', $tokens[$classnamePosition]['content'])[0]);
 
-        $this->originalTokenContent = $tokens[$classnamePosition]['content'];
         foreach ($classnames as $classname) {
-            $this->addFixableError($phpcsFile, $classnamePosition, $classname);
+            $this->processFeatures($phpcsFile, $classnamePosition, $classname);
         }
-    }
-
-    /**
-     * As token contains more then just class name, we have to build new content ourself.
-     *
-     * @param string $newClassname
-     * @param string $originalClassname
-     * @param PhpCsFile $phpcsFile
-     * @return string
-     */
-    protected function getTokenForReplacement($newClassname, $originalClassname, PhpCsFile $phpcsFile)
-    {
-        $token = explode(' ', $this->originalTokenContent);
-
-        $classNames = explode('|', $token[0]);
-        foreach ($classNames as $position => $classname) {
-            if ($classname === $originalClassname) {
-                $classNames[$position] = $newClassname;
-            }
-        }
-        $token[0] = implode('|', $classNames);
-
-        return implode(' ', $token);
     }
 }

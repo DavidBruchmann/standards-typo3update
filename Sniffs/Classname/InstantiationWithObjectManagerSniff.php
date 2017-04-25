@@ -20,13 +20,16 @@
  */
 
 use PHP_CodeSniffer_File as PhpCsFile;
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use PHP_CodeSniffer_Tokens as Tokens;
+use Typo3Update\Sniffs\Classname\AbstractClassnameChecker;
 
 /**
- * Detect and migrate extend and implement of old legacy classnames.
+ * Detect and migrate old legacy classname instantiations using objectmanager create and get.
  */
-class Typo3Update_Sniffs_LegacyClassnames_InheritanceSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_InstantiationWithObjectManagerSniff extends AbstractClassnameChecker
 {
+    use \Typo3Update\Sniffs\ExtendedPhpCsSupportTrait;
+
     /**
      * Returns the token types that this sniff is interested in.
      *
@@ -34,18 +37,11 @@ class Typo3Update_Sniffs_LegacyClassnames_InheritanceSniff extends AbstractClass
      */
     public function register()
     {
-        return [
-            T_EXTENDS,
-            T_IMPLEMENTS,
-        ];
+        return Tokens::$functionNameTokens;
     }
 
     /**
      * Processes the tokens that this sniff is interested in.
-     *
-     * This is the default implementation, as most of the time next T_STRING is
-     * the class name. This way only the register method has to be registered
-     * in default cases.
      *
      * @param PhpCsFile $phpcsFile The file where the token was found.
      * @param int                  $stackPtr  The position in the stack where
@@ -55,40 +51,35 @@ class Typo3Update_Sniffs_LegacyClassnames_InheritanceSniff extends AbstractClass
      */
     public function process(PhpCsFile $phpcsFile, $stackPtr)
     {
-        if ($phpcsFile->getTokens()[$stackPtr]['code'] === T_IMPLEMENTS) {
-            $this->processInterfaces($phpcsFile, $stackPtr);
+        if (!$this->isFunctionCall($phpcsFile, $stackPtr)) {
+            return;
+        }
+        $tokens = $phpcsFile->getTokens();
+
+        $functionName = $tokens[$stackPtr]['content'];
+        if (!in_array($functionName, ['get', 'create'])) {
             return;
         }
 
-        parent::process($phpcsFile, $stackPtr);
-    }
-
-    /**
-     * Process all interfaces for current class.
-     *
-     * @param PhpCsFile $phpcsFile
-     * @param int $stackPtr
-     *
-     * @return void
-     */
-    protected function processInterfaces(PhpCsFile $phpcsFile, $stackPtr)
-    {
-        $interfaces = $phpcsFile->findImplementedInterfaceNames($phpcsFile->findPrevious(T_CLASS, $stackPtr));
-        if ($interfaces === false) {
+        $classnamePosition = $phpcsFile->findNext(
+            T_CONSTANT_ENCAPSED_STRING,
+            $stackPtr,
+            $phpcsFile->findNext(T_CLOSE_PARENTHESIS, $stackPtr)
+        );
+        if ($classnamePosition === false) {
             return;
         }
 
-        foreach ($interfaces as $interface) {
-            if (! $this->isLegacyClassname($interface)) {
-                continue;
-            }
-
-            $position = $phpcsFile->findNext(T_STRING, $stackPtr, null, false, $interface);
-            if ($position === false) {
-                continue;
-            }
-
-            $this->addFixableError($phpcsFile, $position, $interface);
+        if ($functionName === 'create') {
+            $phpcsFile->addWarning(
+                'The "create" method of ObjectManager is no longer supported, please migrate to "get".',
+                $stackPtr,
+                'mightBeDeprecatedMethod',
+                ['create']
+            );
         }
+
+        $classname = $tokens[$classnamePosition]['content'];
+        $this->processFeatures($phpcsFile, $classnamePosition, $classname);
     }
 }

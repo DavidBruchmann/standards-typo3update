@@ -19,13 +19,14 @@
  * 02110-1301, USA.
  */
 
-use PHP_CodeSniffer_File as PhpcsFile;
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use PHP_CodeSniffer_File as PhpCsFile;
+use PHP_CodeSniffer_Tokens as Tokens;
+use Typo3Update\Sniffs\Classname\AbstractClassnameChecker;
 
 /**
  * Detect and migrate instantiations of old legacy classnames using "makeInstance".
  */
-class Typo3Update_Sniffs_LegacyClassnames_IsACallSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_InstantiationWithMakeInstanceSniff extends AbstractClassnameChecker
 {
     use \Typo3Update\Sniffs\ExtendedPhpCsSupportTrait;
 
@@ -36,7 +37,7 @@ class Typo3Update_Sniffs_LegacyClassnames_IsACallSniff extends AbstractClassname
      */
     public function register()
     {
-        return [T_STRING];
+        return Tokens::$functionNameTokens;
     }
 
     /**
@@ -55,22 +56,18 @@ class Typo3Update_Sniffs_LegacyClassnames_IsACallSniff extends AbstractClassname
         }
         $tokens = $phpcsFile->getTokens();
 
-        if ($tokens[$stackPtr]['content'] !== 'is_a') {
+        if ($tokens[$stackPtr]['content'] !== 'makeInstance') {
             return;
         }
 
-        $classnamePosition = $phpcsFile->findNext(
-            T_CONSTANT_ENCAPSED_STRING,
-            $phpcsFile->findNext(T_COMMA, $stackPtr),
-            $phpcsFile->findNext(T_CLOSE_PARENTHESIS, $stackPtr)
-        );
+        $classnamePosition = $phpcsFile->findNext(T_CONSTANT_ENCAPSED_STRING, $stackPtr);
         if ($classnamePosition === false) {
             return;
         }
 
         $classname = $tokens[$classnamePosition]['content'];
         $this->originalTokenContent = $tokens[$classnamePosition]['content'];
-        $this->addFixableError($phpcsFile, $classnamePosition, $classname);
+        $this->processFeatures($phpcsFile, $classnamePosition, $classname);
     }
 
     /**

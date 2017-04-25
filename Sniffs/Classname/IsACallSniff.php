@@ -19,14 +19,16 @@
  * 02110-1301, USA.
  */
 
-use PHP_CodeSniffer_File as PhpCsFile;
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use PHP_CodeSniffer_File as PhpcsFile;
+use Typo3Update\Sniffs\Classname\AbstractClassnameChecker;
 
 /**
- * Migrate Typehints in function / method definitions.
+ * Detect and migrate instantiations of old legacy classnames using "makeInstance".
  */
-class Typo3Update_Sniffs_LegacyClassnames_TypehintSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_IsACallSniff extends AbstractClassnameChecker
 {
+    use \Typo3Update\Sniffs\ExtendedPhpCsSupportTrait;
+
     /**
      * Returns the token types that this sniff is interested in.
      *
@@ -34,7 +36,7 @@ class Typo3Update_Sniffs_LegacyClassnames_TypehintSniff extends AbstractClassnam
      */
     public function register()
     {
-        return [T_FUNCTION];
+        return [T_STRING];
     }
 
     /**
@@ -48,17 +50,25 @@ class Typo3Update_Sniffs_LegacyClassnames_TypehintSniff extends AbstractClassnam
      */
     public function process(PhpCsFile $phpcsFile, $stackPtr)
     {
-        $params = $phpcsFile->getMethodParameters($stackPtr);
-        foreach ($params as $parameter) {
-            if ($parameter['type_hint'] === '') {
-                continue;
-            }
-
-            $position = $phpcsFile->findPrevious(T_STRING, $parameter['token'], $stackPtr, false, null, true);
-            if ($position === false) {
-                continue;
-            }
-            $this->addFixableError($phpcsFile, $position, $parameter['type_hint']);
+        if (!$this->isFunctionCall($phpcsFile, $stackPtr)) {
+            return;
         }
+        $tokens = $phpcsFile->getTokens();
+
+        if ($tokens[$stackPtr]['content'] !== 'is_a') {
+            return;
+        }
+
+        $classnamePosition = $phpcsFile->findNext(
+            T_CONSTANT_ENCAPSED_STRING,
+            $phpcsFile->findNext(T_COMMA, $stackPtr),
+            $phpcsFile->findNext(T_CLOSE_PARENTHESIS, $stackPtr)
+        );
+        if ($classnamePosition === false) {
+            return;
+        }
+
+        $classname = $tokens[$classnamePosition]['content'];
+        $this->processFeatures($phpcsFile, $classnamePosition, $classname);
     }
 }

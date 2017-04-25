@@ -1,5 +1,5 @@
 <?php
-namespace Typo3Update\Sniffs\LegacyClassnames;
+namespace Typo3Update\Feature;
 
 /*
  * Copyright (C) 2017  Daniel Siepmann <coding@daniel-siepmann.de>
@@ -23,12 +23,13 @@ namespace Typo3Update\Sniffs\LegacyClassnames;
 use PHP_CodeSniffer as PhpCs;
 use PHP_CodeSniffer_File as PhpCsFile;
 use PHP_CodeSniffer_Sniff as PhpCsSniff;
-use Typo3Update\Sniffs\LegacyClassnames\Mapping;
+use Typo3Update\FeatureInterface;
+use Typo3Update\Feature\LegacyClassnameMapping;
 
 /**
- * Provide common uses for all sniffs, regarding class name checks.
+ *
  */
-abstract class AbstractClassnameChecker implements PhpCsSniff
+class LegacyClassnameFeature implements FeatureInterface
 {
     /**
      * A list of extension names that might contain legacy class names.
@@ -41,7 +42,7 @@ abstract class AbstractClassnameChecker implements PhpCsSniff
     public $legacyExtensions = ['Extbase', 'Fluid'];
 
     /**
-     * @var Mapping
+     * @var LegacyClassnameMapping
      */
     protected $legacyMapping;
 
@@ -56,51 +57,37 @@ abstract class AbstractClassnameChecker implements PhpCsSniff
 
     public function __construct()
     {
-        $this->legacyMapping = Mapping::getInstance();
+        $this->legacyMapping = LegacyClassnameMapping::getInstance();
     }
 
     /**
-     * Define whether the T_STRING default behaviour should be checked before
-     * or after the $stackPtr.
+     * Process like a PHPCS Sniff.
      *
-     * @return bool
-     */
-    protected function shouldLookBefore()
-    {
-        return false;
-    }
-
-    /**
-     * Processes the tokens that this sniff is interested in.
-     *
-     * This is the default implementation, as most of the time next T_STRING is
-     * the class name. This way only the register method has to be registered
-     * in default cases.
-     *
-     * @param PhpCsFile $phpcsFile The file where the token was found.
-     * @param int                  $stackPtr  The position in the stack where
-     *                                        the token was found.
+     * @param PhpCsFile $phpcsFile
+     * @param int $classnamePosition
+     * @param string $classname
      *
      * @return void
-     *
-     * @SuppressWarnings(PHPMD.ElseExpression) This is for performance reason.
      */
-    public function process(PhpCsFile $phpcsFile, $stackPtr)
+    public function process(PhpCsFile $phpcsFile, $classnamePosition, $classname)
     {
-        $tokens = $phpcsFile->getTokens();
+        $classname = trim($classname, '\\\'"'); // Remove trailing slash, and quotes.
+        $this->addMaybeWarning($phpcsFile, $classnamePosition, $classname);
 
-        if ($this->shouldLookBefore()) {
-            $classnamePosition = $phpcsFile->findPrevious(T_STRING, $stackPtr);
-        } else {
-            $classnamePosition = $phpcsFile->findNext(T_STRING, $stackPtr);
-        }
-
-        if ($classnamePosition === false) {
+        if ($this->isLegacyClassname($classname) === false) {
             return;
         }
 
-        $classname = $tokens[$classnamePosition]['content'];
-        $this->addFixableError($phpcsFile, $classnamePosition, $classname);
+        $fix = $phpcsFile->addFixableError(
+            'Legacy classes are not allowed; found "%s", use "%s" instead',
+            $classnamePosition,
+            'legacyClassname',
+            [$classname, $this->getNewClassname($classname)]
+        );
+
+        if ($fix === true) {
+            $this->replaceLegacyClassname($phpcsFile, $classnamePosition, $classname);
+        }
     }
 
     /**
@@ -122,7 +109,7 @@ abstract class AbstractClassnameChecker implements PhpCsSniff
      * @param string $classname
      * @return bool
      */
-    private function isMaybeLegacyClassname($classname)
+    protected function isMaybeLegacyClassname($classname)
     {
         if (strpos($classname, 'Tx_') === false) {
             return false;
@@ -164,41 +151,13 @@ abstract class AbstractClassnameChecker implements PhpCsSniff
     }
 
     /**
-     * Add an fixable error if given $classname is legacy.
-     *
-     * @param PhpCsFile $phpcsFile
-     * @param int $classnamePosition
-     * @param string $classname
-     */
-    public function addFixableError(PhpCsFile $phpcsFile, $classnamePosition, $classname)
-    {
-        $classname = trim($classname, '\\\'"'); // Remove trailing slash, and quotes.
-        $this->addMaybeWarning($phpcsFile, $classnamePosition, $classname);
-
-        if ($this->isLegacyClassname($classname) === false) {
-            return;
-        }
-
-        $fix = $phpcsFile->addFixableError(
-            'Legacy classes are not allowed; found "%s", use "%s" instead',
-            $classnamePosition,
-            'legacyClassname',
-            [$classname, $this->getNewClassname($classname)]
-        );
-
-        if ($fix === true) {
-            $this->replaceLegacyClassname($phpcsFile, $classnamePosition, $classname);
-        }
-    }
-
-    /**
      * Add an warning if given $classname is maybe legacy.
      *
      * @param PhpCsFile $phpcsFile
      * @param int $classnamePosition
      * @param string $classname
      */
-    private function addMaybeWarning(PhpCsFile $phpcsFile, $classnamePosition, $classname)
+    protected function addMaybeWarning(PhpCsFile $phpcsFile, $classnamePosition, $classname)
     {
         if ($this->isLegacyClassname($classname) || $this->isMaybeLegacyClassname($classname) === false) {
             return;

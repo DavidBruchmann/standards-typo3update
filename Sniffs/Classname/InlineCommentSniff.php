@@ -20,12 +20,12 @@
  */
 
 use PHP_CodeSniffer_File as PhpCsFile;
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use Typo3Update\Sniffs\Classname\AbstractClassnameChecker;
 
 /**
  * Migrate PHP inline comments, e.g. for IDEs.
  */
-class Typo3Update_Sniffs_LegacyClassnames_InlineCommentSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_InlineCommentSniff extends AbstractClassnameChecker
 {
     /**
      * Returns the token types that this sniff is interested in.
@@ -59,7 +59,7 @@ class Typo3Update_Sniffs_LegacyClassnames_InlineCommentSniff extends AbstractCla
             return;
         }
 
-        $this->addFixableError($phpcsFile, $stackPtr, $commentParts[$this->getClassnamePosition($commentParts)]);
+        $this->processFeatures($phpcsFile, $stackPtr, $commentParts[$this->getClassnamePosition($commentParts)]);
     }
 
     /**

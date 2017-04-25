@@ -19,12 +19,12 @@
  * 02110-1301, USA.
  */
 
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use Typo3Update\Sniffs\Classname\AbstractClassnameChecker;
 
 /**
  * Migrate Typehints in catch statements.
  */
-class Typo3Update_Sniffs_LegacyClassnames_TypehintCatchExceptionSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_TypehintCatchExceptionSniff extends AbstractClassnameChecker
 {
     /**
      * Returns the token types that this sniff is interested in.
