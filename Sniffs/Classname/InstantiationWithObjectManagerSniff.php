@@ -19,13 +19,11 @@
  * 02110-1301, USA.
  */
 
-use PHP_CodeSniffer_File as PhpcsFile;
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use PHP_CodeSniffer_File as PhpCsFile;
+use PHP_CodeSniffer_Tokens as Tokens;
+use Typo3Update\Sniffs\Classname\AbstractClassnameChecker;
 
-/**
- * Detect and migrate instantiations of old legacy classnames using "makeInstance".
- */
-class Typo3Update_Sniffs_LegacyClassnames_IsACallSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_InstantiationWithObjectManagerSniff extends AbstractClassnameChecker
 {
     use \Typo3Update\Sniffs\ExtendedPhpCsSupportTrait;
 
@@ -36,7 +34,7 @@ class Typo3Update_Sniffs_LegacyClassnames_IsACallSniff extends AbstractClassname
      */
     public function register()
     {
-        return [T_STRING];
+        return Tokens::$functionNameTokens;
     }
 
     /**
@@ -55,34 +53,30 @@ class Typo3Update_Sniffs_LegacyClassnames_IsACallSniff extends AbstractClassname
         }
         $tokens = $phpcsFile->getTokens();
 
-        if ($tokens[$stackPtr]['content'] !== 'is_a') {
+        $functionName = $tokens[$stackPtr]['content'];
+        if (!in_array($functionName, ['get', 'create'])) {
             return;
         }
 
         $classnamePosition = $phpcsFile->findNext(
             T_CONSTANT_ENCAPSED_STRING,
-            $phpcsFile->findNext(T_COMMA, $stackPtr),
+            $stackPtr,
             $phpcsFile->findNext(T_CLOSE_PARENTHESIS, $stackPtr)
         );
         if ($classnamePosition === false) {
             return;
         }
 
-        $classname = $tokens[$classnamePosition]['content'];
-        $this->originalTokenContent = $tokens[$classnamePosition]['content'];
-        $this->addFixableError($phpcsFile, $classnamePosition, $classname);
-    }
+        if ($functionName === 'create') {
+            $phpcsFile->addWarning(
+                'The "create" method of ObjectManager is no longer supported, please migrate to "get".',
+                $stackPtr,
+                'mightBeDeprecatedMethod',
+                ['create']
+            );
+        }
 
-    /**
-     * As token contains more then just class name, we have to build new content ourself.
-     *
-     * @param string $newClassname
-     * @param string $originalClassname
-     * @param PhpCsFile $phpcsFile
-     * @return string
-     */
-    protected function getTokenForReplacement($newClassname, $originalClassname, PhpCsFile $phpcsFile)
-    {
-        return $this->getTokenReplacementForString($newClassname);
+        $classname = $tokens[$classnamePosition]['content'];
+        $this->processFeatures($phpcsFile, $classnamePosition, $classname);
     }
 }

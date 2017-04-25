@@ -20,12 +20,9 @@
  */
 
 use PHP_CodeSniffer_File as PhpCsFile;
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use Typo3Update\Sniffs\Classname\AbstractClassnameChecker;
 
-/**
- * Migrate Typehints in function / method definitions.
- */
-class Typo3Update_Sniffs_LegacyClassnames_TypehintSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_TypeHintSniff extends AbstractClassnameChecker
 {
     /**
      * Returns the token types that this sniff is interested in.
@@ -58,7 +55,7 @@ class Typo3Update_Sniffs_LegacyClassnames_TypehintSniff extends AbstractClassnam
             if ($position === false) {
                 continue;
             }
-            $this->addFixableError($phpcsFile, $position, $parameter['type_hint']);
+            $this->processFeatures($phpcsFile, $position, $parameter['type_hint']);
         }
     }
 }

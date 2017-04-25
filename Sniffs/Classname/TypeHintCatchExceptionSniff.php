@@ -19,24 +19,10 @@
  * 02110-1301, USA.
  */
 
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use Typo3Update\Sniffs\Classname\AbstractClassnameChecker;
 
-/**
- * Detect and migrate static calls to old legacy classnames.
- */
-class Typo3Update_Sniffs_LegacyClassnames_StaticCallSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_TypeHintCatchExceptionSniff extends AbstractClassnameChecker
 {
-    /**
-     * Define whether the T_STRING default behaviour should be checked before
-     * or after the $stackPtr.
-     *
-     * @return bool
-     */
-    protected function shouldLookBefore()
-    {
-        return true;
-    }
-
     /**
      * Returns the token types that this sniff is interested in.
      *
@@ -44,6 +30,6 @@ class Typo3Update_Sniffs_LegacyClassnames_StaticCallSniff extends AbstractClassn
      */
     public function register()
     {
-        return [T_DOUBLE_COLON];
+        return [T_CATCH];
     }
 }

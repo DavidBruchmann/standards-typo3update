@@ -19,14 +19,10 @@
  * 02110-1301, USA.
  */
 
-use PHP_CodeSniffer_File as PhpCsFile;
-use PHP_CodeSniffer_Tokens as Tokens;
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use PHP_CodeSniffer_File as PhpcsFile;
+use Typo3Update\Sniffs\Classname\AbstractClassnameChecker;
 
-/**
- * Detect and migrate old legacy classname instantiations using objectmanager create and get.
- */
-class Typo3Update_Sniffs_LegacyClassnames_InstantiationWithObjectManagerSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_IsACallSniff extends AbstractClassnameChecker
 {
     use \Typo3Update\Sniffs\ExtendedPhpCsSupportTrait;
 
@@ -37,7 +33,7 @@ class Typo3Update_Sniffs_LegacyClassnames_InstantiationWithObjectManagerSniff ex
      */
     public function register()
     {
-        return Tokens::$functionNameTokens;
+        return [T_STRING];
     }
 
     /**
@@ -56,44 +52,20 @@ class Typo3Update_Sniffs_LegacyClassnames_InstantiationWithObjectManagerSniff ex
         }
         $tokens = $phpcsFile->getTokens();
 
-        $functionName = $tokens[$stackPtr]['content'];
-        if (!in_array($functionName, ['get', 'create'])) {
+        if ($tokens[$stackPtr]['content'] !== 'is_a') {
             return;
         }
 
         $classnamePosition = $phpcsFile->findNext(
             T_CONSTANT_ENCAPSED_STRING,
-            $stackPtr,
+            $phpcsFile->findNext(T_COMMA, $stackPtr),
             $phpcsFile->findNext(T_CLOSE_PARENTHESIS, $stackPtr)
         );
         if ($classnamePosition === false) {
             return;
         }
 
-        if ($functionName === 'create') {
-            $phpcsFile->addWarning(
-                'The "create" method of ObjectManager is no longer supported, please migrate to "get".',
-                $stackPtr,
-                'mightBeDeprecatedMethod',
-                ['create']
-            );
-        }
-
         $classname = $tokens[$classnamePosition]['content'];
-        $this->originalTokenContent = $tokens[$classnamePosition]['content'];
-        $this->addFixableError($phpcsFile, $classnamePosition, $classname);
-    }
-
-    /**
-     * As token contains more then just class name, we have to build new content ourself.
-     *
-     * @param string $newClassname
-     * @param string $originalClassname
-     * @param PhpCsFile $phpcsFile
-     * @return string
-     */
-    protected function getTokenForReplacement($newClassname, $originalClassname, PhpCsFile $phpcsFile)
-    {
-        return $this->getTokenReplacementForString($newClassname);
+        $this->processFeatures($phpcsFile, $classnamePosition, $classname);
     }
 }
