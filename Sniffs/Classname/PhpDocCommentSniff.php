@@ -20,15 +20,25 @@
  */
 
 use PHP_CodeSniffer_File as PhpCsFile;
-use PHP_CodeSniffer_Tokens as Tokens;
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use PHP_CodeSniffer_Sniff as PhpCsSniff;
+use Typo3Update\Feature\FeaturesSupport;
 
 /**
- * Detect and migrate instantiations of old legacy classnames using "makeInstance".
+ * Handle PHP Doc comments.
+ *
+ * E.g. annotations like @param or @return, see $allowedTags.
+ *
+ * Will do nothing itself, but call features.
  */
-class Typo3Update_Sniffs_LegacyClassnames_InstantiationWithMakeInstanceSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_PhpDocCommentSniff implements PhpCsSniff
 {
-    use \Typo3Update\Sniffs\ExtendedPhpCsSupportTrait;
+    use FeaturesSupport;
+
+    /**
+     * The configured tags will be processed.
+     * @var array<string>
+     */
+    public $allowedTags = ['@param', '@return', '@var'];
 
     /**
      * Returns the token types that this sniff is interested in.
@@ -37,7 +47,7 @@ class Typo3Update_Sniffs_LegacyClassnames_InstantiationWithMakeInstanceSniff ext
      */
     public function register()
     {
-        return Tokens::$functionNameTokens;
+        return [T_DOC_COMMENT_TAG];
     }
 
     /**
@@ -51,35 +61,18 @@ class Typo3Update_Sniffs_LegacyClassnames_InstantiationWithMakeInstanceSniff ext
      */
     public function process(PhpCsFile $phpcsFile, $stackPtr)
     {
-        if (!$this->isFunctionCall($phpcsFile, $stackPtr)) {
-            return;
-        }
         $tokens = $phpcsFile->getTokens();
-
-        if ($tokens[$stackPtr]['content'] !== 'makeInstance') {
+        if (!in_array($tokens[$stackPtr]['content'], $this->allowedTags)) {
             return;
         }
-
-        $classnamePosition = $phpcsFile->findNext(T_CONSTANT_ENCAPSED_STRING, $stackPtr);
+        $classnamePosition = $phpcsFile->findNext(T_DOC_COMMENT_STRING, $stackPtr);
         if ($classnamePosition === false) {
             return;
         }
+        $classnames = explode('|', explode(' ', $tokens[$classnamePosition]['content'])[0]);
 
-        $classname = $tokens[$classnamePosition]['content'];
-        $this->originalTokenContent = $tokens[$classnamePosition]['content'];
-        $this->addFixableError($phpcsFile, $classnamePosition, $classname);
-    }
-
-    /**
-     * As token contains more then just class name, we have to build new content ourself.
-     *
-     * @param string $newClassname
-     * @param string $originalClassname
-     * @param PhpCsFile $phpcsFile
-     * @return string
-     */
-    protected function getTokenForReplacement($newClassname, $originalClassname, PhpCsFile $phpcsFile)
-    {
-        return $this->getTokenReplacementForString($newClassname);
+        foreach ($classnames as $classname) {
+            $this->processFeatures($phpcsFile, $classnamePosition, $classname);
+        }
     }
 }

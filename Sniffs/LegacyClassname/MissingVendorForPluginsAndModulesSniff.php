@@ -22,12 +22,12 @@
 use PHP_CodeSniffer_File as PhpCsFile;
 use PHP_CodeSniffer_Sniff as PhpCsSniff;
 use PHP_CodeSniffer_Tokens as Tokens;
-use Typo3Update\Sniffs\Options;
+use Typo3Update\Options;
 
 /**
  * Detect whether vendor is missing for plugins and modules registrations and configurations.
  */
-class Typo3Update_Sniffs_LegacyClassnames_MissingVendorForPluginsAndModulesSniff implements PhpCsSniff
+class Typo3Update_Sniffs_LegacyClassname_MissingVendorForPluginsAndModulesSniff implements PhpCsSniff
 {
     use \Typo3Update\Sniffs\ExtendedPhpCsSupportTrait;
 

@@ -1,4 +1,5 @@
 <?php
+namespace Typo3Update\Feature;
 
 /*
  * Copyright (C) 2017  Daniel Siepmann <coding@daniel-siepmann.de>
@@ -20,34 +21,21 @@
  */
 
 use PHP_CodeSniffer_File as PhpCsFile;
-use Typo3Update\Options;
-use Typo3Update\Sniffs\ExtendedPhpCsSupportTrait;
-use Typo3Update\Sniffs\Removed\AbstractGenericPhpUsage;
+use PHP_CodeSniffer_Sniff as PhpCsSniff;
 
-class Typo3Update_Sniffs_Removed_GenericFunctionCallSniff extends AbstractGenericPhpUsage
+/**
+ * See "Features" in documentation.
+ */
+interface FeatureInterface
 {
-    use ExtendedPhpCsSupportTrait;
-
-    protected function getRemovedConfigFiles()
-    {
-        return Options::getRemovedFunctionConfigFiles();
-    }
-
-    protected function findRemoved(PhpCsFile $phpcsFile, $stackPtr)
-    {
-        if (!$this->isFunctionCall($phpcsFile, $stackPtr)) {
-            return [];
-        }
-
-        return parent::findRemoved($phpcsFile, $stackPtr);
-    }
-
-    protected function getOldUsage(array $config)
-    {
-        $concat = '->';
-        if ($config['static']) {
-            $concat = '::';
-        }
-        return $config['fqcn'] . $concat . $config['name'];
-    }
+    /**
+     * Process like a PHPCS Sniff.
+     *
+     * @param PhpCsFile $phpcsFile The current PhpCsFile working with.
+     * @param int $stackPtr The current stack pointer.
+     * @param string $content The content detected to work with.
+     *
+     * @return void
+     */
+    public function process(PhpCsFile $phpcsFile, $stackPtr, $content);
 }

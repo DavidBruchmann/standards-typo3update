@@ -1,5 +1,5 @@
 <?php
-namespace Typo3Update\Sniffs;
+namespace Typo3Update;
 
 /*
  * Copyright (C) 2017  Daniel Siepmann <coding@daniel-siepmann.de>
@@ -21,6 +21,7 @@ namespace Typo3Update\Sniffs;
  */
 
 use PHP_CodeSniffer as PhpCs;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Wrapper to retrieve options from PhpCs with defaults.
@@ -51,7 +52,7 @@ class Options
     {
         return (string) static::getOptionWithDefault(
             'mappingFile',
-            __DIR__ . '/../../../../LegacyClassnames.php'
+            __DIR__ . '/../../../LegacyClassnames.php'
         );
     }
 
@@ -64,7 +65,7 @@ class Options
     {
         return static::getOptionFileNames(
             'removedFunctionConfigFiles',
-            __DIR__ . '/../Configuration/Removed/Functions/*.yaml'
+            __DIR__ . '/Configuration/Removed/Functions/*.yaml'
         );
     }
 
@@ -77,7 +78,46 @@ class Options
     {
         return static::getOptionFileNames(
             'removedConstantConfigFiles',
-            __DIR__ . '/../Configuration/Removed/Constants/*.yaml'
+            __DIR__ . '/Configuration/Removed/Constants/*.yaml'
+        );
+    }
+
+    /**
+     * Returns an array of absolute file names containing removed typoscript.
+     *
+     * @return array<string>
+     */
+    public static function getRemovedTypoScriptConfigFiles()
+    {
+        return static::getOptionFileNames(
+            'removedTypoScript',
+            __DIR__ . '/Configuration/Removed/TypoScript/*.yaml'
+        );
+    }
+
+    /**
+     * Returns an array of absolute file names containing removed typoscript constants.
+     *
+     * @return array<string>
+     */
+    public static function getRemovedTypoScriptConstantConfigFiles()
+    {
+        return static::getOptionFileNames(
+            'removedTypoScriptConstant',
+            __DIR__ . '/Configuration/Removed/TypoScriptConstant/*.yaml'
+        );
+    }
+
+    /**
+     * Returns an array of absolute file names containing removed class configurations.
+     *
+     * @return array<string>
+     */
+    public static function getRemovedClassConfigFiles()
+    {
+        return static::getOptionFileNames(
+            'removedClassConfigFiles',
+            __DIR__ . '/Configuration/Removed/Classes/*.yaml'
         );
     }
 
@@ -94,6 +134,30 @@ class Options
         $option = PhpCs::getConfigData($optionName);
         if (!$option) {
             $option = $default;
+        }
+
+        return $option;
+    }
+
+    /**
+     * Get the configured features.
+     *
+     * @return array
+     */
+    public static function getFeaturesConfiguration()
+    {
+        $option = [];
+        $fileNames = static::getOptionFileNames(
+            'features',
+            __DIR__ . '/Configuration/Features/*.yaml'
+        );
+
+        foreach ($fileNames as $file) {
+            $content = Yaml::parse(file_get_contents((string) $file));
+            if ($content === null) {
+                $content = [];
+            }
+            $option = array_merge($option, $content);
         }
 
         return $option;

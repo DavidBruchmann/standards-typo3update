@@ -1,4 +1,5 @@
 <?php
+namespace Typo3Update\Feature;
 
 /*
  * Copyright (C) 2017  Daniel Siepmann <coding@daniel-siepmann.de>
@@ -20,34 +21,43 @@
  */
 
 use PHP_CodeSniffer_File as PhpCsFile;
-use Typo3Update\Options;
-use Typo3Update\Sniffs\ExtendedPhpCsSupportTrait;
-use Typo3Update\Sniffs\Removed\AbstractGenericPhpUsage;
 
-class Typo3Update_Sniffs_Removed_GenericFunctionCallSniff extends AbstractGenericPhpUsage
+/**
+ * Provides "feature" support for sniffs.
+ */
+trait FeaturesSupport
 {
-    use ExtendedPhpCsSupportTrait;
-
-    protected function getRemovedConfigFiles()
+    /**
+     * @return Features
+     */
+    protected function getFeatures()
     {
-        return Options::getRemovedFunctionConfigFiles();
+        return new Features($this);
     }
 
-    protected function findRemoved(PhpCsFile $phpcsFile, $stackPtr)
+    /**
+     * Processes all features for the sniff.
+     *
+     * @param PhpCsFile $phpcsFile
+     * @param int $stackPtr
+     * @param string $content
+     */
+    public function processFeatures(PhpCsFile $phpcsFile, $stackPtr, $content)
     {
-        if (!$this->isFunctionCall($phpcsFile, $stackPtr)) {
-            return [];
+        foreach ($this->getFeatures() as $featureClassName) {
+            $feature = $this->createFeature($featureClassName);
+            $feature->process($phpcsFile, $stackPtr, $content);
         }
-
-        return parent::findRemoved($phpcsFile, $stackPtr);
     }
 
-    protected function getOldUsage(array $config)
+    /**
+     * Create a new instance of the given feature.
+     *
+     * @param string $featureClassname
+     * @return FeatureInterface
+     */
+    protected function createFeature($featureClassname)
     {
-        $concat = '->';
-        if ($config['static']) {
-            $concat = '::';
-        }
-        return $config['fqcn'] . $concat . $config['name'];
+        return new $featureClassname($this);
     }
 }

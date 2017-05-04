@@ -1,4 +1,5 @@
 <?php
+namespace Typo3Update\Feature;
 
 /*
  * Copyright (C) 2017  Daniel Siepmann <coding@daniel-siepmann.de>
@@ -19,20 +20,13 @@
  * 02110-1301, USA.
  */
 
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use PHP_CodeSniffer_Sniff as PhpCsSniff;
+use Typo3Update\AbstractYamlRemovedUsage as BaseAbstractYamlRemovedUsage;
 
-/**
- * Migrate Typehints in catch statements.
- */
-class Typo3Update_Sniffs_LegacyClassnames_TypehintCatchExceptionSniff extends AbstractClassnameChecker
+abstract class AbstractYamlRemovedUsage extends BaseAbstractYamlRemovedUsage implements FeatureInterface
 {
-    /**
-     * Returns the token types that this sniff is interested in.
-     *
-     * @return array<int>
-     */
-    public function register()
+    public function __construct(PhpCsSniff $sniff)
     {
-        return [T_CATCH];
+        parent::__construct();
     }
 }

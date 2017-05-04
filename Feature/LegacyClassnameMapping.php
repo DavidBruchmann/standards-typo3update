@@ -1,5 +1,5 @@
 <?php
-namespace Typo3Update\Sniffs\LegacyClassnames;
+namespace Typo3Update\Feature;
 
 /*
  * Copyright (C) 2017  Daniel Siepmann <coding@daniel-siepmann.de>
@@ -20,7 +20,7 @@ namespace Typo3Update\Sniffs\LegacyClassnames;
  * 02110-1301, USA.
  */
 
-use Typo3Update\Sniffs\Options;
+use Typo3Update\Options;
 
 /**
  * Singleton wrapper for mappings.
@@ -28,7 +28,7 @@ use Typo3Update\Sniffs\Options;
  * Will check the configured file for whether a class is legacy and provides further methods.
  * Also can update to add new migrated class names.
  */
-final class Mapping
+final class LegacyClassnameMapping
 {
     // Singleton implementation - Start
     static protected $instance = null;
@@ -40,7 +40,7 @@ final class Mapping
     public static function getInstance()
     {
         if (static::$instance === null) {
-            static::$instance = new Mapping();
+            static::$instance = new LegacyClassnameMapping();
         }
 
         return static::$instance;

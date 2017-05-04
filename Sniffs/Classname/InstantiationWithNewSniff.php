@@ -19,12 +19,9 @@
  * 02110-1301, USA.
  */
 
-use Typo3Update\Sniffs\LegacyClassnames\AbstractClassnameChecker;
+use Typo3Update\Sniffs\Classname\AbstractClassnameChecker;
 
-/**
- * Detect and migrate old legacy classnames instantiations using phps "new".
- */
-class Typo3Update_Sniffs_LegacyClassnames_InstantiationWithNewSniff extends AbstractClassnameChecker
+class Typo3Update_Sniffs_Classname_InstantiationWithNewSniff extends AbstractClassnameChecker
 {
     /**
      * Returns the token types that this sniff is interested in.
